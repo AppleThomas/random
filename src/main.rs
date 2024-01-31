@@ -32,7 +32,7 @@ fn main() {
             println!("runfor is {}", schedule_model.time_units);
             println!("use is {}", schedule_model.schedule_algorithm);
             for process in schedule_model.process_list {
-                println!("process name is {} arrival is {} burst is {}", process.process_name, process.arrival_time, process.amount_till_burst);
+                println!("process name is {} arrival is {} burst is {}", process.process_name, process.arrival_time, process.burst_time);
             }
         }
         Err(e) => {

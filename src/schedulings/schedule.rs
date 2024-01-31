@@ -4,6 +4,8 @@ use core::panic;
 use std::fs::File;
 use std::io::{self, BufRead};
 
+use super::process::{Process, ProcessState};
+
 #[derive(Default)]
 pub struct ScheduleModel {
     pub number_of_processes: i32,
@@ -11,13 +13,6 @@ pub struct ScheduleModel {
     pub schedule_algorithm: String,
     pub process_list: Vec<Process>
 
-}
-
-#[derive(Default)]
-pub struct Process {
-    pub process_name: String,
-    pub arrival_time: i32,
-    pub amount_till_burst: i32,
 }
 
 pub fn read_contents(input_file: File) -> io::Result<ScheduleModel>{
@@ -135,7 +130,7 @@ pub fn read_contents(input_file: File) -> io::Result<ScheduleModel>{
          // get burst time of process
         match process_line.nth(0).unwrap_or_default().parse::<i32>() {
             Ok(parsed_value) => {
-                new_process.amount_till_burst = parsed_value;
+                new_process.burst_time = parsed_value;
             }
             Err(_) => {
                 println!("Failed to parse as i32");
