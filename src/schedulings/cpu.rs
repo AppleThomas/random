@@ -2,7 +2,8 @@ use super::{
     schedule::ScheduleModel, 
     scheduler::Scheduler,
     sjf::SJF,
-    process::Process
+    fcfs::FCFS,
+    process::Process,
 };
 
 pub fn run(mut model: ScheduleModel) {
@@ -20,6 +21,7 @@ pub fn run(mut model: ScheduleModel) {
         handle_pre_tick(&mut model.process_list, scheduler, t);
 
         if scheduler.selected_process_name().is_none() {
+            
             println!("Time {:3} : Idle", t)
         }
     }
@@ -40,7 +42,9 @@ fn tick_proceses(processes: &mut Vec<Process>, cur_time: i32) {
     });
 }
 
+
 fn handle_on_tick(processes: &mut Vec<Process>, scheduler: &mut dyn Scheduler, cur_time: i32) {
+    
     processes.iter_mut()
     .filter(|p| !p.finished() && p.arrived(cur_time - 1))
     .for_each(|p| scheduler.on_tick(p, cur_time));
@@ -53,6 +57,7 @@ fn handle_finishes(processes: &mut Vec<Process>, scheduler: &mut dyn Scheduler, 
 }
 
 fn handle_arrivals(processes: &mut Vec<Process>, scheduler: &mut dyn Scheduler, cur_time: i32) {
+    // goes through all the processes inputted in and sees if the current time in the scheduling matches any arrival times
     for process in processes.iter_mut() {
         if process.arrival_time == cur_time {
             process.deselect(); // sets the process as ready when arriving
@@ -73,7 +78,7 @@ fn handle_pre_tick(processes: &mut Vec<Process>, scheduler: &mut dyn Scheduler, 
 /// Attempts to convert the given string slice to the correct scheduler struct
 fn parse_scheduler(name: &str) -> Option<Box<dyn Scheduler>> {
     match name {
-        "fcfs" => todo!(),
+        "fcfs" => Some(Box::new(FCFS::default())),
         "sjf" => Some(Box::new(SJF::default())),
         "rr" => todo!(),
         _ => None

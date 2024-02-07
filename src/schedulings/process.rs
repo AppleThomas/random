@@ -1,6 +1,6 @@
 use std::{num::ParseIntError, str::SplitWhitespace};
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum ProcessState {
     Ready,
     Running,
@@ -102,6 +102,9 @@ impl Process {
 
     /// Returns whether the process has arrived at the given time
     pub fn arrived(&self, time: i32) -> bool {
+        if self.arrival_time <= time {
+            // println!("arrived punk ass with name {} and arrival time {} and current time {}",self.name, self.arrival_time, time);
+        }
         self.arrival_time <= time
     }
 
