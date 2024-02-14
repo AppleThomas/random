@@ -19,7 +19,6 @@ impl RealSjf {
         let mut shortest = ("", &i32::MAX);
 
         for (name, burst_time) in self.job_list.iter() {
-            // println!("not shortest is {} and burst {}", shortest.1, burst_time);
             
             if shortest.1 > burst_time {
                 
@@ -72,8 +71,6 @@ impl Scheduler for RealSjf {
                 }
             }
             else {
-                // println!("fuck");
-                // println!("ick {}", process.name);
                 process.deselect();
             }
         }
@@ -95,7 +92,6 @@ impl Scheduler for RealSjf {
     }
 
     fn selected_process_name(&self) -> Option<String> {
-        // println!("name is {:?}", self.shortest_job);
         match &self.shortest_job {
             Some(job_name) => Some(job_name.to_string()),
             None => None
