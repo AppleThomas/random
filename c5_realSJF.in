@@ -1,0 +1,9 @@
+processcount 5	# Read 5 processes
+runfor 30	# Run for 23 time units
+use realSJF
+process name P1 arrival 2 burst 6
+process name P2 arrival 5 burst 2
+process name P3 arrival 1 burst 8
+process name P4 arrival 0 burst 3
+process name P5 arrival 4 burst 4
+end

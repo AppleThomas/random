@@ -1,5 +1,5 @@
 
-use std::{collections::HashMap, vec};
+use std::collections::HashMap;
 
 use super::scheduler::Scheduler;
 use super::process::{Process, ProcessState};
@@ -11,11 +11,6 @@ pub struct FCFS {
     /// A hashmap that contains keys that represent the process name and a integer for arrival time
     pub job_list: HashMap<String, i32>,
     pub first_job: Option<String>
-}
-
-pub struct FcfsProcess {
-    pub name: String,
-    pub arrival_time: i32,
 }
 
 impl FCFS {

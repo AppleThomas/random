@@ -1,9 +1,5 @@
 use super::{
-    schedule::ScheduleModel, 
-    scheduler::Scheduler,
-    sjf::SJF,
-    fcfs::FCFS,
-    process::Process,
+    fcfs::FCFS, process::Process, schedule::ScheduleModel, scheduler::Scheduler, sjf::SJF, real_sjf::RealSjf
 };
 
 pub fn run(mut model: ScheduleModel) {
@@ -81,6 +77,7 @@ fn parse_scheduler(name: &str) -> Option<Box<dyn Scheduler>> {
         "fcfs" => Some(Box::new(FCFS::default())),
         "sjf" => Some(Box::new(SJF::default())),
         "rr" => todo!(),
+        "realSJF" => Some(Box::new(RealSjf::default())),
         _ => None
     }
 }
