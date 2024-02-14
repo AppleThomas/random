@@ -104,13 +104,6 @@ impl CPU {
         }
     }
 
-
-    pub fn print_output(&self) {
-        for line in self.output.iter() {
-            println!("{}", line);
-        }
-    }
-
     pub fn write_output_file(&self, file_path: &str) -> Result<()>{
         let mut file = File::create(file_path)?;
 
