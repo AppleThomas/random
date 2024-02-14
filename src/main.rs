@@ -33,7 +33,6 @@ fn main() {
         Ok(schedule_model) => {
             let mut cpu = CPU::default();
             cpu.run(schedule_model);
-            cpu.print_output();
             let _ = cpu.write_output_file(&input_file_name.replace(".in", ".out"));
         }
         Err(e) => {

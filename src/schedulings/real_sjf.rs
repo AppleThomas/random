@@ -38,7 +38,7 @@ impl RealSjf {
 impl Scheduler for RealSjf {
 
     fn descriptive_name(&self) -> String {
-        "Shortest Job First (real version)".to_string()
+        "real Shortest Job First (non-preemptive)".to_string()
     }
 
     fn on_arrive(&mut self, process: &mut super::process::Process, time: i32) {

@@ -25,7 +25,7 @@ impl RR {
 
 impl Scheduler for RR {
     fn descriptive_name(&self) -> String {
-        format!("Round Robin\nQuantum {:3}", self.quantum).to_string()
+        format!("Round-Robin\nQuantum {:3}\n", self.quantum).to_string()
     }
     
     fn on_arrive(&mut self, process: &mut Process, _: i32) {
@@ -58,12 +58,8 @@ impl Scheduler for RR {
         }
     }
 
-    fn on_finish(&mut self, finished_process: &Process, _: i32) {
-        if let Some(selected_name) = &self.selected_process {
-            if selected_name == &finished_process.name {
-                self.selected_process = None;
-            }
-        }
+    fn on_finish(&mut self, _: &Process, _: i32) {
+        self.selected_process = None;
     }
 
     fn selected_process_name(&self) -> Option<String> {

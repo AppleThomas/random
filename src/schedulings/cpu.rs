@@ -17,19 +17,18 @@ impl CPU {
 
         self.output.push(format!("{:3} processes", model.number_of_processes));
         self.output.push(format!("Using {}", scheduler.descriptive_name()));
-        self.output.push(format!(""));
 
         for t in 0..model.time_units {
             self.tick_proceses(&mut model.process_list, t);
+            self.handle_arrivals(&mut model.process_list, scheduler, t);
             self.handle_on_tick(&mut model.process_list, scheduler, t);
             self.handle_finishes(&mut model.process_list, scheduler, t);
-            self.handle_arrivals(&mut model.process_list, scheduler, t);
             self.handle_pre_tick(&mut model.process_list, scheduler, t);
 
             self.handle_selection_output(&model.process_list, scheduler, t)
         }
 
-        self.output.push(format!("Finished at time {}", model.time_units));
+        self.output.push(format!("Finished at time {:3}", model.time_units));
         self.output.push(format!(""));
 
         self.handle_status_output(&model.process_list);
