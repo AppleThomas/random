@@ -68,12 +68,12 @@ impl Scheduler for FCFS {
         }
     }
 
-    fn on_tick(&mut self, process: &mut super::process::Process, time: i32) {
+    fn on_tick(&mut self, _: &mut super::process::Process, _: i32) {
         // do nothing
     }
 
     
-    fn on_finish(&mut self, finished_process: &Process, current_time: i32) {
+    fn on_finish(&mut self, finished_process: &Process, _: i32) {
         
         self.job_list.remove(&finished_process.name);
         self.find_first_job();

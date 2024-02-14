@@ -1,83 +1,125 @@
+use std::{fs::File, io::{Result, Write}};
+
 use super::{
-    fcfs::FCFS, process::Process, schedule::ScheduleModel, scheduler::Scheduler, sjf::SJF, real_sjf::RealSjf
+    process::Process, 
+    schedule::ScheduleModel, 
+    scheduler::Scheduler, 
 };
 
-pub fn run(mut model: ScheduleModel) {
-    let mut boxed_scheduler = parse_scheduler(&model.schedule_algorithm).expect("Could not parse scheduler");
-    let scheduler = boxed_scheduler.as_mut();
+#[derive(Default)]
+pub struct CPU {
+    output: Vec<String>,
+}
 
-    println!("{:3} processes", model.number_of_processes);
-    println!("Using {}", scheduler.descriptive_name());
+impl CPU {
+    pub fn run(&mut self, mut model: ScheduleModel) {
+        let scheduler = model.scheduler.as_mut();
 
-    for t in 0..model.time_units {
-        tick_proceses(&mut model.process_list, t);
-        handle_on_tick(&mut model.process_list, scheduler, t);
-        handle_finishes(&mut model.process_list, scheduler, t);
-        handle_arrivals(&mut model.process_list, scheduler, t);
-        handle_pre_tick(&mut model.process_list, scheduler, t);
+        self.output.push(format!("{:3} processes", model.number_of_processes));
+        self.output.push(format!("Using {}", scheduler.descriptive_name()));
+        self.output.push(format!(""));
+
+        for t in 0..model.time_units {
+            self.tick_proceses(&mut model.process_list, t);
+            self.handle_on_tick(&mut model.process_list, scheduler, t);
+            self.handle_finishes(&mut model.process_list, scheduler, t);
+            self.handle_arrivals(&mut model.process_list, scheduler, t);
+            self.handle_pre_tick(&mut model.process_list, scheduler, t);
+
+            self.handle_selection_output(&model.process_list, scheduler, t)
+        }
+
+        self.output.push(format!("Finished at time {}", model.time_units));
+        self.output.push(format!(""));
+
+        self.handle_status_output(&model.process_list);
+    }
+
+    fn tick_proceses(&mut self, processes: &mut Vec<Process>, cur_time: i32) {
+        processes.iter_mut()
+        .filter(|p| p.arrived(cur_time - 1))
+        .for_each(|p| {
+            p.tick(cur_time);
+        });
+    }
+
+
+    fn handle_on_tick(&mut self, processes: &mut Vec<Process>, scheduler: &mut dyn Scheduler, cur_time: i32) {
+        processes.iter_mut()
+        .filter(|p| !p.finished() && p.arrived(cur_time - 1))
+        .for_each(|p| scheduler.on_tick(p, cur_time));
+    }
+
+    fn handle_finishes(&mut self, processes: &mut Vec<Process>, scheduler: &mut dyn Scheduler, cur_time: i32) {
+        processes.iter_mut()
+        .filter(|p| p.finished() && p.finish_time == cur_time)
+        .for_each(|p| {
+            self.output.push(format!("Time {:3} : {} finished", cur_time, p.name));
+            scheduler.on_finish(p, cur_time);
+        });
+    }
+
+    fn handle_arrivals(&mut self, processes: &mut Vec<Process>, scheduler: &mut dyn Scheduler, cur_time: i32) {
+        // goes through all the processes inputted in and sees if the current time in the scheduling matches any arrival times
+        for process in processes.iter_mut() {
+            if process.arrival_time == cur_time {
+                process.deselect(); // sets the process as ready when arriving
+                self.output.push(format!("Time {:3} : {} arrived", cur_time, process.name));
+                scheduler.on_arrive(process, cur_time);
+            }
+        }
+    }
+
+    fn handle_pre_tick(&mut self, processes: &mut Vec<Process>, scheduler: &mut dyn Scheduler, cur_time: i32) {
+        processes.iter_mut()
+        .filter(|p| !p.finished() && p.arrived(cur_time))
+        .for_each(|p| {
+            scheduler.pre_tick(p, cur_time);
+        });
+    }
+
+    fn handle_selection_output(&mut self, processes: &Vec<Process>, scheduler: &dyn Scheduler, cur_time: i32) {    
+        // if we have a possible new selection at the end of the cur_time
+        for process in processes {
+            if let Some(last_selection_time) = process.last_selection_time {
+                if last_selection_time == cur_time {
+                    self.output.push(format!("Time {:3} : {} selected (burst {:3})", cur_time, process.name, process.time_remaining))
+                }
+            }
+        }
 
         if scheduler.selected_process_name().is_none() {
-            
-            println!("Time {:3} : Idle", t)
+            self.output.push(format!("Time {:3} : Idle", cur_time));
         }
     }
 
-    println!("Finished at time {}", model.time_units);
-    println!();
-
-    for process in model.process_list.iter() {
-        process.print_status();
-    }
-}
-
-fn tick_proceses(processes: &mut Vec<Process>, cur_time: i32) {
-    processes.iter_mut()
-    .filter(|p| p.arrived(cur_time - 1))
-    .for_each(|p| {
-        p.tick(cur_time);
-    });
-}
-
-
-fn handle_on_tick(processes: &mut Vec<Process>, scheduler: &mut dyn Scheduler, cur_time: i32) {
-    
-    processes.iter_mut()
-    .filter(|p| !p.finished() && p.arrived(cur_time - 1))
-    .for_each(|p| scheduler.on_tick(p, cur_time));
-}
-
-fn handle_finishes(processes: &mut Vec<Process>, scheduler: &mut dyn Scheduler, cur_time: i32) {
-    processes.iter_mut()
-    .filter(|p| p.finished())
-    .for_each(|p| scheduler.on_finish(p, cur_time));
-}
-
-fn handle_arrivals(processes: &mut Vec<Process>, scheduler: &mut dyn Scheduler, cur_time: i32) {
-    // goes through all the processes inputted in and sees if the current time in the scheduling matches any arrival times
-    for process in processes.iter_mut() {
-        if process.arrival_time == cur_time {
-            process.deselect(); // sets the process as ready when arriving
-            println!("Time {:3} : {} arrived", cur_time, process.name);
-            scheduler.on_arrive(process, cur_time);
+    fn handle_status_output(&mut self, processes: &Vec<Process>) {
+        for process in processes.iter() {
+            if process.finished() {
+                let line = format!("{} wait {:3} turnaround {:3} response {:3}", process.name, process.wait_time, process.turnaround_time, process.response_time);
+                self.output.push(line);
+            }
+            else {
+                self.output.push(format!("{} did not finish", process.name));
+            }
         }
     }
-}
 
-fn handle_pre_tick(processes: &mut Vec<Process>, scheduler: &mut dyn Scheduler, cur_time: i32) {
-    processes.iter_mut()
-    .filter(|p| !p.finished() && p.arrived(cur_time))
-    .for_each(|p| {
-        scheduler.pre_tick(p, cur_time);
-    });
-}
 
-/// Attempts to convert the given string slice to the correct scheduler struct
-fn parse_scheduler(name: &str) -> Option<Box<dyn Scheduler>> {
-    match name {
-        "fcfs" => Some(Box::new(FCFS::default())),
-        "sjf" => Some(Box::new(SJF::default())),
-        "rr" => todo!(),
-        "realSJF" => Some(Box::new(RealSjf::default())),
-        _ => None
+    pub fn print_output(&self) {
+        for line in self.output.iter() {
+            println!("{}", line);
+        }
     }
+
+    pub fn write_output_file(&self, file_path: &str) -> Result<()>{
+        let mut file = File::create(file_path)?;
+
+        for line in self.output.iter() {
+            file.write((line.to_owned() + "\n").as_bytes())?;
+        }
+
+        Ok(())
+    }
+
 }

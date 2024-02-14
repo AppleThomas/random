@@ -17,7 +17,9 @@ pub struct Process {
 
     pub turnaround_time: i32,
     pub response_time: i32,
-    pub wait_time: i32
+    pub wait_time: i32,
+    pub finish_time: i32,
+    pub last_selection_time: Option<i32>
 }
 
 impl Process {
@@ -30,7 +32,9 @@ impl Process {
             state: None,
             turnaround_time: 0,
             response_time: 0,
-            wait_time: 0
+            wait_time: 0,
+            finish_time: 0,
+            last_selection_time: None
         }
     }
 
@@ -79,7 +83,7 @@ impl Process {
     /// Also prints selection time and remaining time for the process
     pub fn select(&mut self, cur_time: i32) {
         self.state = Some(ProcessState::Running);
-        println!("Time {:3} : {} selected (burst {:3})", cur_time, self.name, self.time_remaining);
+        self.last_selection_time = Some(cur_time);
     }
 
     /// Sets the process state back to ready (if not already finished)
@@ -92,7 +96,7 @@ impl Process {
     // Sets the process to a finished state and prints finish time
     fn finish(&mut self, cur_time: i32) {
         self.state = None;
-        println!("Time {:3} : {} finished", cur_time, self.name);
+        self.finish_time = cur_time;
     }
 
     /// Returns whether the process has finished
@@ -103,15 +107,5 @@ impl Process {
     /// Returns whether the process has arrived at the given time
     pub fn arrived(&self, time: i32) -> bool {
         self.arrival_time <= time
-    }
-
-    /// Prints a simple summary of performance if process finished, otherwise mentions the process didn't finish
-    pub fn print_status(&self) {
-        if self.finished() {
-            println!("{} wait {:3} turnaround {:3} response {:3}", self.name, self.wait_time, self.turnaround_time, self.response_time);
-        }
-        else {
-            println!("{} did not finish", self.name);
-        }
     }
 }

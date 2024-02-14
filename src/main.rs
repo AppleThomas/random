@@ -5,7 +5,7 @@ mod schedulings;
 use std::env;
 use std::fs::File;
 
-use schedulings::cpu;
+use schedulings::cpu::CPU;
 
 fn main() {
     // parses command line
@@ -17,6 +17,7 @@ fn main() {
     }
 
     // takes input file name listed in command line
+    let input_file_name = &args[1];
     let input_file = File::open(&args[1]);
 
     // checks if valid file
@@ -30,13 +31,10 @@ fn main() {
     // reads file into a scheduling struct
     match schedulings::schedule::read_contents(file){
         Ok(schedule_model) => {
-            // println!("processcount is {}", schedule_model.number_of_processes);
-            // println!("runfor is {}", schedule_model.time_units);
-            // println!("use is {}", schedule_model.schedule_algorithm);
-            // for process in schedule_model.process_list {
-            //     println!("process name is {} arrival is {} burst is {}", process.process_name, process.arrival_time, process.burst_time);
-            // }
-            cpu::run(schedule_model);
+            let mut cpu = CPU::default();
+            cpu.run(schedule_model);
+            cpu.print_output();
+            let _ = cpu.write_output_file(&input_file_name.replace(".in", ".out"));
         }
         Err(e) => {
             panic!("Error reading file: {}", e);

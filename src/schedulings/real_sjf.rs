@@ -8,7 +8,7 @@ use super::process::{Process, ProcessState};
 #[derive(Default)]
 
 pub struct RealSjf {
-    /// A hashmap that contains keys that represent the process name and a integer for arrival time
+    /// A hashmap that contains keys that represent the process name and a integer for burst time
     pub job_list: HashMap<String, i32>,
     pub shortest_job: Option<String>
 }

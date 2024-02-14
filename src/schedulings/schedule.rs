@@ -5,13 +5,20 @@ use std::error::Error;
 use std::fs::File; 
 use std::io::{BufReader, BufRead, Lines};
 
-use super::process::Process;
+use super::{
+    process::Process, 
+    fcfs::FCFS, 
+    real_sjf::RealSjf, 
+    sjf::SJF,
+    rr::RR, 
+    scheduler::Scheduler, 
+};
 
-#[derive(Default)]
+
 pub struct ScheduleModel {
     pub number_of_processes: i32,
     pub time_units: i32,
-    pub schedule_algorithm: String,
+    pub scheduler: Box<dyn Scheduler>,
     pub process_list: Vec<Process>
 }
 
@@ -22,7 +29,12 @@ pub fn read_contents(input_file: File) -> Result<ScheduleModel, Box<dyn Error>> 
     // creates an iterator for the lines of text in the file
     let mut lines_iter: Lines<BufReader<File>> = reader.lines();
 
-    let mut schedule_model = ScheduleModel::default();
+    let mut schedule_model = ScheduleModel {
+        number_of_processes: 0,
+        time_units: 0,
+        scheduler: Box::new(FCFS::default()),
+        process_list: vec![],
+    };
 
     // reads first line for process count
     if let Some(Ok(first_line)) = lines_iter.next() {
@@ -52,19 +64,7 @@ pub fn read_contents(input_file: File) -> Result<ScheduleModel, Box<dyn Error>> 
         panic!("no second line found")
     }
 
-    // get which algo to use next
-    if let Some(Ok(third_line)) = lines_iter.next() {
-
-        // makes sure we're actually getting process count
-        if !(third_line.split_whitespace().nth(0).unwrap_or_default() == "use") {
-            panic!("failed to get algorithm to use");
-        }
-
-        schedule_model.schedule_algorithm = third_line.split_whitespace().nth(1).unwrap_or_default().to_string();
-        
-    } else {
-        panic!("no second line found")
-    }
+    schedule_model.scheduler = parse_scheduler(&mut lines_iter)?;
 
     let mut end_flag = false;
 
@@ -87,7 +87,7 @@ pub fn read_contents(input_file: File) -> Result<ScheduleModel, Box<dyn Error>> 
             panic!("improper formatting or out of place line")
         }
 
-        let new_process = Process::parse(process_line).expect("Error parsing process line!");
+        let new_process = Process::parse(process_line)?;
         schedule_model.process_list.push(new_process);
     }
 
@@ -96,4 +96,39 @@ pub fn read_contents(input_file: File) -> Result<ScheduleModel, Box<dyn Error>> 
     }
 
     Ok(schedule_model)
+}
+
+
+/// Reads the next lines to determine the scheduler
+fn parse_scheduler(lines_iter: &mut Lines<BufReader<File>>) -> Result<Box<dyn Scheduler>, Box<dyn Error>> {
+
+    if let Some(Ok(next_line)) = lines_iter.next() {
+        if !(next_line.split_whitespace().nth(0).unwrap_or_default() == "use") {
+            panic!("incorrect scheduler algorithm line format");
+        }
+
+        let scheduler_name = next_line.split_whitespace().nth(1).unwrap_or_default().to_string();
+        
+        return match scheduler_name.as_str() {
+                "fcfs" => Ok(Box::new(FCFS::default())),
+                "sjf" => Ok(Box::new(SJF::default())),
+                "rr" => parse_rr(lines_iter),
+                "realSJF" => Ok(Box::new(RealSjf::default())),
+                _ => panic!("Scheduler name not found in file!")
+        }
+    }
+
+    panic!("no `use` line found")
+}
+
+fn parse_rr(lines_iter: &mut Lines<BufReader<File>>) -> Result<Box<dyn Scheduler>, Box<dyn Error>> {
+
+    if let Some(Ok(next_line)) = lines_iter.next() {
+        if next_line.split_whitespace().nth(0).unwrap_or_default() == "quantum" {
+            let quantum = next_line.split_whitespace().nth(1).unwrap_or_default().parse::<i32>()?;
+            return Ok(Box::new(RR::new(quantum)));
+        }
+    }
+
+    panic!("quantum line not found!");
 }
